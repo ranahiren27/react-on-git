@@ -1,0 +1,26 @@
+.App {
+  display: block;
+  height: 250px;
+  margin-top: 200px;
+  text-align: center;
+}
+
+button {
+  border: 0px;
+  background: rgb(52, 128, 241);
+  font-size: large;
+  padding: 1%;
+  margin-right: 5% !important;
+  margin: auto auto;
+  border-radius: 30% 10% 10% 10%;
+}
+
+button:hover {
+  box-shadow: 10px 10px 9px rgb(0, 0, 0);
+  color:wheat !important;
+}
+
+a {
+  color: whitesmoke !important;
+  text-decoration: none !important;
+}
