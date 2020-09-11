@@ -1,11 +1,12 @@
 import React, { Component } from "react";
 import { Link } from "react-router-dom";
+import { store } from "../../store";
 import { FaRegHandPointLeft } from "react-icons/fa";
 import { InputGroup, FormControl, Modal, Button } from "react-bootstrap";
 import CustomToast from "../customToast/customToast";
 import Loader from "react-loader-spinner";
 import * as _ from "lodash";
-import { addUser } from "../../services";
+import { addUser, updateUser } from "../../services";
 import "./createUser.css";
 
 export default class CreateUser extends Component {
@@ -23,9 +24,40 @@ export default class CreateUser extends Component {
       DOBErr: false,
       BioErr: false,
       toastMsg: "",
-      loading: false,
+      loading: true,
+      update: false,
     };
+    this.isUpdate();
   }
+  isUpdate = async () => {
+    await this.setState({ loading: true });
+    const id = this.props.match.params.id;
+    const data = store.getState();
+    if (this.props.match.params.id !== undefined && data !== undefined) {
+      const user = data.filter((_user) => _user._id === id);
+      if (user.length === 0) {
+        await this.setState({ update: false });
+        await this.setState({ toastMsg: `User with id ${id} is not exists!!` });
+      } else {
+        await this.setState({ update: true });
+        const { FirstName, LastName, email, DOB, Bio } = user[0];
+        const tempDate = new Date(DOB);
+        const month =
+          tempDate.getMonth() + 1 < 10
+            ? `0${tempDate.getMonth() + 1}`
+            : tempDate.getMonth() + 1;
+
+        await this.setState({
+          FirstName,
+          LastName,
+          email,
+          DOB: `${tempDate.getFullYear()}-${month}-${tempDate.getDate()}`,
+          Bio,
+        });
+      }
+    }
+    await this.setState({ loading: false });
+  };
   FirstNameChange = async (e) => {
     await this.setState({ FirstName: e.target.value });
     if (_.isEmpty(this.state.FirstName)) {
@@ -53,6 +85,7 @@ export default class CreateUser extends Component {
   };
   DOBChange = async (e) => {
     await this.setState({ DOB: e.target.value });
+    console.log(this.state.DOB);
     if (_.isEmpty(this.state.DOB)) {
       await this.setState({ DOBErr: true });
     } else {
@@ -98,27 +131,47 @@ export default class CreateUser extends Component {
       const state = this.state;
       const { FirstName, LastName, email, DOB, Bio } = state;
       try {
-        const response = await addUser({
-          FirstName,
-          LastName,
-          email,
-          DOB,
-          Bio,
-        });
+        let response;
+        if (!this.state.update) {
+          response = await addUser({
+            FirstName,
+            LastName,
+            email,
+            DOB,
+            Bio,
+          });
+        }
+        if (this.state.update) {
+          response = await updateUser(
+            {
+              FirstName,
+              LastName,
+              email,
+              DOB,
+              Bio,
+            },
+            this.props.match.params.id
+          );
+        }
         console.log(response);
         if (response.data.isBoom) {
           await this.setState({
             toastMsg: response.data.output.payload.message,
           });
         } else {
-          await this.setState({ toastMsg: "New User Added Successfully!!" });
-          this.setState({
-            FirstName: "",
-            LastName: "",
-            email: "",
-            DOB: "",
-            Bio: "",
-          });
+          const msg = this.state.update
+            ? `User with id ${this.props.match.params.id} is updated Successfully!!`
+            : "New User Added Successfully!!";
+          await this.setState({ toastMsg: msg });
+          if (!this.state.update) {
+            this.setState({
+              FirstName: "",
+              LastName: "",
+              email: "",
+              DOB: "",
+              Bio: "",
+            });
+          }
         }
       } catch (error) {}
     }
@@ -134,6 +187,7 @@ export default class CreateUser extends Component {
     const emailStyle = emailErr ? errorStyle : {};
     const DOBStyle = DOBErr ? errorStyle : {};
     const BioStyle = BioErr ? errorStyle : {};
+    console.log(this.state.update);
 
     return (
       <div>
@@ -146,7 +200,8 @@ export default class CreateUser extends Component {
           centered
         >
           <Modal.Header style={{ background: "rgb(20,20,40)", color: "wheat" }}>
-            <h2>Add New User</h2>
+            {!this.state.update && <h2>Add New User</h2>}
+            {this.state.update && <h2>Update User Details</h2>}
           </Modal.Header>
 
           <Modal.Body
@@ -237,11 +292,20 @@ export default class CreateUser extends Component {
                 <br />
                 <div id="msg"></div>
                 <InputGroup className="mb-3">
-                  <FormControl
-                    onClick={this.handleSubmit}
-                    type="submit"
-                    value="Add User"
-                  />
+                  {!this.state.update && (
+                    <FormControl
+                      onClick={this.handleSubmit}
+                      type="submit"
+                      value="Add User"
+                    />
+                  )}
+                  {this.state.update && (
+                    <FormControl
+                      onClick={this.handleSubmit}
+                      type="submit"
+                      value="Update User"
+                    />
+                  )}
                 </InputGroup>
                 <Link to="">
                   <Button>
@@ -249,7 +313,9 @@ export default class CreateUser extends Component {
                   </Button>
                 </Link>
                 {!_.isEmpty(this.state.toastMsg) && (
-                  <CustomToast msg={this.state.toastMsg} />
+                  <div>
+                    <CustomToast msg={this.state.toastMsg} />
+                  </div>
                 )}{" "}
               </form>
             )}{" "}

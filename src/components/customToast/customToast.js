@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Toast, Row, Col, Button } from "react-bootstrap";
+import React from "react";
+import { Toast } from "react-bootstrap";
 import "./customToast.css";
 
 export default class CustomToast extends React.Component {
