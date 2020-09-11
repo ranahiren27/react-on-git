@@ -1,6 +1,6 @@
 import Axios from "axios";
 
-const API = "http://127.0.0.1:8000/v1";
+const API = "https://ancient-island-11320.herokuapp.com/v1";
 
 export const addUser = async (data) => {
   try {
